@@ -3,7 +3,7 @@
 //
 // navilight is a project of the lecture "Mobile Medien" in wintersemester 17/18 at HfG Schwaebisch Gmuend.
 // Created by Tobias Haag, Jacqueline Lechner, Jan Schneider on 01/12/17.
-//
+// bububububu
 // first version
 
 #include <Wire.h> // include library
