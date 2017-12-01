@@ -7,7 +7,7 @@
 // July 2013
 // first version
 
-#include <Wire.h>
+#include <Wire.h> // include library
 
 // Register names according to the datasheet.
 
