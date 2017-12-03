@@ -1,6 +1,10 @@
 # navilight
 Navigation with a headtorch, only with light.
 
+It should be working like this (visualization):
+
+![visualization](https://media.giphy.com/media/l3mZ8iYYwThV2avcI/giphy.gif)
+
 ## general information 
 
 Project of the lecture "Mobile Medien" at [HfG Schwäbisch Gmünd](http://www.hfg-gmuend.de) in wintersemester 2017/18.
