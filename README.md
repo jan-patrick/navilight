@@ -12,3 +12,5 @@ Project of the lecture "Mobile Medien" at [HfG Schwäbisch Gmünd](http://www.hf
 [Tobias Haag](https://iot.hfg-gmuend.de/author/tobias_haag) (IoT2),
 [Jacqueline Lechner](https://iot.hfg-gmuend.de/author/jacqueline_lechner) (IoT2),
 [Jan Schneider](http://jan-patrick.de) (IoT2)
+
+Library-code: [MPU-9150Lib](http://www.mellottsvrpage.com/wp-content/uploads/2014/05/MPU9150Lib-master.zip)
