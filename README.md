@@ -1,5 +1,5 @@
 # navilight
-Navigation with a headtorch, only with light.
+Navigation for bikers, only with light.
 
 It should be working like this (visualization):
 
