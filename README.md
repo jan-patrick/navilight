@@ -1,7 +1,11 @@
 # navilight
 Navigation for bikers, only with light.
 
-It should be working like this (visualization):
+It should be working like this:
+
+![visualization](https://github.com/JanPSchneider/navilight/blob/master/lightexamples.jpg)
+
+visualization of turning left:
 
 ![visualization](https://media.giphy.com/media/l3mZ8iYYwThV2avcI/giphy.gif)
 
