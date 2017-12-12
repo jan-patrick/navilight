@@ -1,9 +1,5 @@
 # navilight
-Navigation for bikers, only with light.
-
-It should be working like this:
-
-![visualization](https://github.com/JanPSchneider/navilight/blob/master/lightexamples.jpg)
+Navigation via the bicycle lamp, only with the use of light.
 
 visualization of turning left:
 
