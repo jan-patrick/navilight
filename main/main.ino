@@ -71,6 +71,9 @@ const int LED_MAIN =  3;                            // constants won't change
 const int LED_LEFT =  2;
 const int LED_RIGHT =  4;
 
+// status of navilight (0 = navigation off but device is on, 1 = start, 2 = stop, 3 = straight, 4 = left, 5 = right, 6 = false, 7 = warning)
+int status = 0;
+
 // counter for every time we read out the MPU-9150
 long readoutcounter = 0;
 
@@ -91,23 +94,95 @@ void setup(){
 void loop(){
 
   MPU.selectDevice(DEVICE_TO_USE);                         // make sure we use the right MPU and as control
-
-  digitalWrite(LED_MAIN, LOW);                             // make sure the LEDs are off while not being used
-  digitalWrite(LED_LEFT, LOW); 
-  digitalWrite(LED_RIGHT, LOW); 
-
-  if (MPU.read()) {                                        // get the latest data if ready
-    readoutcounter++;
-    String readouttext = "Readouts: ";
-    String readouttextandvariable = readouttext + readoutcounter;
-    Serial.println(readouttextandvariable); 
-//  MPU.printQuaternion(MPU.m_rawQuaternion);              // print the raw quaternion from the dmp
-//  MPU.printVector(MPU.m_rawMag);                         // print the raw mag data
-//  MPU.printVector(MPU.m_rawAccel);                       // print the raw accel data
-//  MPU.printAngles(MPU.m_dmpEulerPose);                   // the Euler angles from the dmp quaternion
-//  MPU.printVector(MPU.m_calAccel);                       // print the calibrated accel data
-//  MPU.printVector(MPU.m_calMag);                         // print the calibrated mag data
-    MPU.printAngles(MPU.m_fusedEulerPose);                 // print the output of the data fusion
-    Serial.println();
+ 
+  // setting status of navilight via serial
+  if (Serial.available() > 0){
+    status = Serial.parseInt();
+    Serial.print("I am in status: ");
+    Serial.println(status, DEC);
   }
+
+  switch (status){
+    //navigation off but device is on
+    case 0:
+      digitalWrite(LED_MAIN, HIGH);
+      digitalWrite(LED_LEFT, LOW); 
+      digitalWrite(LED_RIGHT, LOW);
+      break;
+    // start  
+    case 1:
+      digitalWrite(LED_MAIN, HIGH);
+      digitalWrite(LED_LEFT, LOW); 
+      digitalWrite(LED_RIGHT, LOW);
+      delay(100);
+      digitalWrite(LED_MAIN, HIGH);
+      digitalWrite(LED_LEFT, HIGH); 
+      digitalWrite(LED_RIGHT, HIGH);
+      delay(200);
+      digitalWrite(LED_MAIN, HIGH);
+      digitalWrite(LED_LEFT, LOW); 
+      digitalWrite(LED_RIGHT, LOW);
+      status = 3;
+      Serial.println("I am in status: 3");
+      Serial.println("Started navigation, please start moving");
+      break;
+    // stop
+    case 2:
+      Serial.println("stop, you did it! #fancyrainbow");
+      break;
+    // straight
+    case 3:
+      digitalWrite(LED_MAIN, HIGH);
+      digitalWrite(LED_LEFT, LOW); 
+      digitalWrite(LED_RIGHT, LOW);
+      break;
+    // left
+    case 4:
+      digitalWrite(LED_MAIN, HIGH);
+      digitalWrite(LED_LEFT, HIGH); 
+      digitalWrite(LED_RIGHT, LOW);
+      break;
+    // right
+    case 5:
+      digitalWrite(LED_MAIN, HIGH);
+      digitalWrite(LED_LEFT, LOW); 
+      digitalWrite(LED_RIGHT, HIGH);
+      break;
+    // false
+    case 6:
+      Serial.println("false");
+      break; 
+    // warning
+    case 7:
+      Serial.println("WARNING!");
+      break;          
+    default:
+      digitalWrite(LED_MAIN, LOW);                          // make sure the LEDs are off while device is "off"
+      digitalWrite(LED_LEFT, LOW); 
+      digitalWrite(LED_RIGHT, LOW);
+      break;    
+  }
+
+  if (MPU.read()) {                                         // get the latest data if ready
+    readoutMPU();
+  }
+}
+
+
+
+
+
+void readoutMPU() {
+  readoutcounter++;
+  String readouttext = "Readouts: ";
+  String readouttextandvariable = readouttext + readoutcounter;
+  Serial.println(readouttextandvariable); 
+//  MPU.printQuaternion(MPU.m_rawQuaternion);               // print the raw quaternion from the dmp
+//  MPU.printVector(MPU.m_rawMag);                          // print the raw mag data
+//  MPU.printVector(MPU.m_rawAccel);                        // print the raw accel data
+//  MPU.printAngles(MPU.m_dmpEulerPose);                    // the Euler angles from the dmp quaternion
+//  MPU.printVector(MPU.m_calAccel);                        // print the calibrated accel data
+//  MPU.printVector(MPU.m_calMag);                          // print the calibrated mag data
+  MPU.printAngles(MPU.m_fusedEulerPose);                  // print the output of the data fusion
+  Serial.println();
 }
