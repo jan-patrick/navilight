@@ -6,11 +6,14 @@
 //
 //  date: 12.12.2017
 //  
-//  descrition: In the current state the code prints out the variables of the MPU-9150.
+//  description: At current state the code prints out the variables of the MPU-9150.
+//
+//  source: https://github.com/JanPSchneider/navilight
 //  
 //  devices:
-//  - Ardunio Mega
+//  - Arduino Mega
 //  - MPU-9150
+//  - 3 LEDs (+resistors)
 //
 //  PINs:
 //    Arduino Mega  MPU-9150
@@ -19,6 +22,11 @@
 //  - SDA           SDA
 //  - SCL           SCL
 //
+//  - 2             LED_LEFT
+//  - 3             LED_MAIN
+//  - 4             LED_RIGHT
+//
+
 
 #include <Wire.h>
 #include "I2Cdev.h"
@@ -58,19 +66,41 @@ MPU9150Lib MPU;                                             // the MPU object
 //  SERIAL_PORT_SPEED defines the speed to use for the debug serial port
 #define  SERIAL_PORT_SPEED  115200
 
-void setup()
-{
+// set the LED-PINs
+const int LED_MAIN =  3;                            // constants won't change
+const int LED_LEFT =  2;
+const int LED_RIGHT =  4;
+
+// counter for every time we read out the MPU-9150
+long readoutcounter = 0;
+
+void setup(){
+
   Serial.begin(SERIAL_PORT_SPEED);
-  Serial.print("Arduino9150 navilight starting using device "); Serial.println(DEVICE_TO_USE);
+  Serial.print("navilight started using MPU-9150 device "); Serial.println(DEVICE_TO_USE);
   Wire.begin();
   MPU.selectDevice(DEVICE_TO_USE);                        // only really necessary if using device 1
   MPU.init(MPU_UPDATE_RATE, MPU_MAG_MIX_GYRO_AND_MAG, MAG_UPDATE_RATE, MPU_LPF_RATE);   // start the MPU
+
+  // initialise LEDs
+  pinMode(LED_MAIN, OUTPUT);
+  pinMode(LED_LEFT, OUTPUT);
+  pinMode(LED_RIGHT, OUTPUT);
 }
 
-void loop()
-{ 
+void loop(){
+
   MPU.selectDevice(DEVICE_TO_USE);                         // make sure we use the right MPU and as control
+
+  digitalWrite(LED_MAIN, LOW);                             // make sure the LEDs are off while not being used
+  digitalWrite(LED_LEFT, LOW); 
+  digitalWrite(LED_RIGHT, LOW); 
+
   if (MPU.read()) {                                        // get the latest data if ready
+    readoutcounter++;
+    String readouttext = "Readouts: ";
+    String readouttextandvariable = readouttext + readoutcounter;
+    Serial.println(readouttextandvariable); 
 //  MPU.printQuaternion(MPU.m_rawQuaternion);              // print the raw quaternion from the dmp
 //  MPU.printVector(MPU.m_rawMag);                         // print the raw mag data
 //  MPU.printVector(MPU.m_rawAccel);                       // print the raw accel data
