@@ -452,4 +452,3 @@ void MPU9150Lib::printAngles(float *vec)
   Serial.print(" y: "); Serial.print(vec[VEC3_Y] * RAD_TO_DEGREE);  
   Serial.print(" z: "); Serial.print(vec[VEC3_Z] * RAD_TO_DEGREE);    
 }
-

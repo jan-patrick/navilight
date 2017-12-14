@@ -78,6 +78,12 @@ int status = 0;
 // counter for every time we read out the MPU-9150
 long readoutcounter = 0;
 
+// array for improving MPU data
+int mpuValues[]={0,0,0,0,0};
+
+// deviation for making navilight light the way in right direction
+int deviation = 0;
+
 // time variables
 unsigned long currentMillis = 0; 
 unsigned long previousMillisStart = 0;
@@ -126,16 +132,16 @@ void loop(){
   switch (status){
     // navigation off but device is on
     case 0:
-      ledMainOn();
+      ledControl(250, 0, 0);
       break;
     // start  
     case 1:
       if (currentMillis - previousMillisStart >= startInterval) {
         previousMillisStart = currentMillis;                // save the last time the LED state was changed
-        if(LED_LEFT==LOW){
-          ledAllOn();
-        }else if(LED_LEFT==HIGH){
-          ledMainOn();
+        if(LED_LEFT<=50){
+          ledControl(250, 250, 250);
+        }else{
+          ledControl(250, 0, 0);
           status = 3;
           Serial.println("I am in status: 3");
           Serial.println("Started navigation, please start moving.");
@@ -151,15 +157,15 @@ void loop(){
       break;
     // straight
     case 3:
-      ledMainOn();
+      ledControl(250, 0, 0);
       break;
     // left
     case 4:
-      ledMainLelftOn();
+      ledControl(250, 0, 0);
       break;
     // right
     case 5:
-      ledMainRightOn();
+      ledControl(250, 0, 0);
       break;
     // false
     case 6:
@@ -176,7 +182,7 @@ void loop(){
       }
       break;          
     default:
-      ledAllOff();                                          // make sure the LEDs are off while device is "off"
+      ledControl(0, 0, 0);                                  // make sure the LEDs are off while device is "off"
       break;    
   }
 
@@ -203,45 +209,25 @@ void readoutMPU() {
 //  MPU.printAngles(MPU.m_dmpEulerPose);                    // the Euler angles from the dmp quaternion
 //  MPU.printVector(MPU.m_calAccel);                        // print the calibrated accel data
 //  MPU.printVector(MPU.m_calMag);                          // print the calibrated mag data
-  MPU.printAngles(MPU.m_fusedEulerPose);                  // print the output of the data fusion
+  MPU.printAngles(MPU.m_fusedEulerPose);                    // print the output of the data fusion
   Serial.println();
+  mpuValues[readoutcounter+4] = MPU.m_fusedEulerPose[1];
+  if(20 <= mpuValues[readoutcounter+3]-mpuValues[readoutcounter+4]){
+    deviation = -1;
+    Serial.println("Wrong course, turn left!");
+  }else if(360 >= mpuValues[readoutcounter+3]-mpuValues[readoutcounter+4]){
+    deviation = 1;
+    Serial.println("Wrong course, turn right!");
+  }else{
+    deviation = 0;
+  }
 }
 
 // functions for all LED cases (every LED that is not ON / HIGH in function name is off / LOW)
-void ledAllOff(){
-  digitalWrite(LED_MAIN, LOW);
-  digitalWrite(LED_LEFT, LOW); 
-  digitalWrite(LED_RIGHT, LOW);
-}
-
-void ledAllOn(){
-  digitalWrite(LED_MAIN, HIGH);
-  digitalWrite(LED_LEFT, HIGH); 
-  digitalWrite(LED_RIGHT, HIGH);
-}
-
-void ledMainOn(){
-  digitalWrite(LED_MAIN, HIGH);
-  digitalWrite(LED_LEFT, LOW); 
-  digitalWrite(LED_RIGHT, LOW);
-}
-
-void ledMainLelftOn(){
-  digitalWrite(LED_MAIN, HIGH);
-  digitalWrite(LED_LEFT, HIGH); 
-  digitalWrite(LED_RIGHT, LOW);
-}
-
-void ledMainRightOn(){
-  digitalWrite(LED_MAIN, HIGH);
-  digitalWrite(LED_LEFT, LOW); 
-  digitalWrite(LED_RIGHT, HIGH);
-}
-
-void ledLeftRightOn(){
-  digitalWrite(LED_MAIN, LOW);
-  digitalWrite(LED_LEFT, HIGH); 
-  digitalWrite(LED_RIGHT, HIGH);
+void ledControl(int ledMainStatus, int ledLeftStatus, int ledRightStatus){
+  digitalWrite(LED_MAIN, ledMainStatus);
+  digitalWrite(LED_LEFT, ledLeftStatus); 
+  digitalWrite(LED_RIGHT, ledRightStatus);
 }
 
 void ledLeftRightFade(){
@@ -256,7 +242,7 @@ void ledLeftRightFade(){
       ledFadeState = "GROW";
     }
   }
-  digitalWrite(LED_MAIN, HIGH);
+  digitalWrite(LED_MAIN, 250);
   digitalWrite(LED_LEFT, ledBrightness); 
   digitalWrite(LED_RIGHT, ledBrightness);
 }
@@ -269,11 +255,11 @@ void ledAllFade(){
     }
   }else if (ledFadeState == "SHRINK") {
     ledBrightness -= ledBrightnessSteps;
-    if (ledBrightness<=ledBrightnessSteps) {
+    if (ledBrightness<=170) {
       ledFadeState = "GROW";
     }
   }
-  digitalWrite(LED_MAIN, HIGH);
+  digitalWrite(LED_MAIN, ledBrightness);
   digitalWrite(LED_LEFT, ledBrightness); 
   digitalWrite(LED_RIGHT, ledBrightness);
 }
