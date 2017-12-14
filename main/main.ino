@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 //
 //  main code of navilight
 //  
@@ -6,7 +6,8 @@
 //
 //  date: 12.12.2017
 //  
-//  description: At current state the code prints out the variables of the MPU-9150.
+//  description: At current state the code prints out the variables of the MPU-9150. 
+//               The LEDs are basically implemented.
 //
 //  source: https://github.com/JanPSchneider/navilight
 //  
@@ -77,12 +78,30 @@ int status = 0;
 // counter for every time we read out the MPU-9150
 long readoutcounter = 0;
 
+// time variables
+unsigned long currentMillis = 0; 
+unsigned long previousMillisStart = 0;
+unsigned long previousMillisFadeWarning = 0;
+unsigned long previousMillisFadeStop = 0;
+unsigned long previousMillisFadeFalse = 0;
+
+// intervals
+const long startInterval = 500;
+const long fadeWarningInterval = 20;
+const long fadeStopInterval = 100;
+const long fadeFalseInterval = 50;
+
+// fade variables
+int ledBrightness = 0;
+int ledBrightnessSteps = 5;
+String ledFadeState = "GROW";
+
 void setup(){
 
   Serial.begin(SERIAL_PORT_SPEED);
   Serial.print("navilight started using MPU-9150 device "); Serial.println(DEVICE_TO_USE);
   Wire.begin();
-  MPU.selectDevice(DEVICE_TO_USE);                        // only really necessary if using device 1
+  MPU.selectDevice(DEVICE_TO_USE);                          // only really necessary if using device 1
   MPU.init(MPU_UPDATE_RATE, MPU_MAG_MIX_GYRO_AND_MAG, MAG_UPDATE_RATE, MPU_LPF_RATE);   // start the MPU
 
   // initialise LEDs
@@ -93,7 +112,9 @@ void setup(){
 
 void loop(){
 
-  MPU.selectDevice(DEVICE_TO_USE);                         // make sure we use the right MPU and as control
+  currentMillis = millis();                                 // setting current time in milliseconds
+
+  MPU.selectDevice(DEVICE_TO_USE);                          // make sure we use the right MPU and as control
  
   // setting status of navilight via serial
   if (Serial.available() > 0){
@@ -103,63 +124,59 @@ void loop(){
   }
 
   switch (status){
-    //navigation off but device is on
+    // navigation off but device is on
     case 0:
-      digitalWrite(LED_MAIN, HIGH);
-      digitalWrite(LED_LEFT, LOW); 
-      digitalWrite(LED_RIGHT, LOW);
+      ledMainOn();
       break;
     // start  
     case 1:
-      digitalWrite(LED_MAIN, HIGH);
-      digitalWrite(LED_LEFT, LOW); 
-      digitalWrite(LED_RIGHT, LOW);
-      delay(100);
-      digitalWrite(LED_MAIN, HIGH);
-      digitalWrite(LED_LEFT, HIGH); 
-      digitalWrite(LED_RIGHT, HIGH);
-      delay(200);
-      digitalWrite(LED_MAIN, HIGH);
-      digitalWrite(LED_LEFT, LOW); 
-      digitalWrite(LED_RIGHT, LOW);
-      status = 3;
-      Serial.println("I am in status: 3");
-      Serial.println("Started navigation, please start moving");
+      if (currentMillis - previousMillisStart >= startInterval) {
+        previousMillisStart = currentMillis;                // save the last time the LED state was changed
+        if(LED_LEFT==LOW){
+          ledAllOn();
+        }else if(LED_LEFT==HIGH){
+          ledMainOn();
+          status = 3;
+          Serial.println("I am in status: 3");
+          Serial.println("Started navigation, please start moving.");
+        }  
+      }  
       break;
     // stop
     case 2:
-      Serial.println("stop, you did it! #fancyrainbow");
+      if(currentMillis - previousMillisFadeStop >= fadeStopInterval) {
+        previousMillisFadeStop = currentMillis;   
+        ledAllFade();
+      }
       break;
     // straight
     case 3:
-      digitalWrite(LED_MAIN, HIGH);
-      digitalWrite(LED_LEFT, LOW); 
-      digitalWrite(LED_RIGHT, LOW);
+      ledMainOn();
       break;
     // left
     case 4:
-      digitalWrite(LED_MAIN, HIGH);
-      digitalWrite(LED_LEFT, HIGH); 
-      digitalWrite(LED_RIGHT, LOW);
+      ledMainLelftOn();
       break;
     // right
     case 5:
-      digitalWrite(LED_MAIN, HIGH);
-      digitalWrite(LED_LEFT, LOW); 
-      digitalWrite(LED_RIGHT, HIGH);
+      ledMainRightOn();
       break;
     // false
     case 6:
-      Serial.println("false");
+      if(currentMillis - previousMillisFadeFalse >= fadeFalseInterval) {
+        previousMillisFadeFalse = currentMillis;   
+        ledLeftRightFade();
+      }
       break; 
     // warning
     case 7:
-      Serial.println("WARNING!");
+      if(currentMillis - previousMillisFadeWarning >= fadeWarningInterval) {
+        previousMillisFadeWarning = currentMillis;   
+        ledLeftRightFade();
+      }
       break;          
     default:
-      digitalWrite(LED_MAIN, LOW);                          // make sure the LEDs are off while device is "off"
-      digitalWrite(LED_LEFT, LOW); 
-      digitalWrite(LED_RIGHT, LOW);
+      ledAllOff();                                          // make sure the LEDs are off while device is "off"
       break;    
   }
 
@@ -170,8 +187,11 @@ void loop(){
 
 
 
+///////////////
+// functions //
+///////////////
 
-
+// function to read out the MPU-9150
 void readoutMPU() {
   readoutcounter++;
   String readouttext = "Readouts: ";
@@ -185,4 +205,75 @@ void readoutMPU() {
 //  MPU.printVector(MPU.m_calMag);                          // print the calibrated mag data
   MPU.printAngles(MPU.m_fusedEulerPose);                  // print the output of the data fusion
   Serial.println();
+}
+
+// functions for all LED cases (every LED that is not ON / HIGH in function name is off / LOW)
+void ledAllOff(){
+  digitalWrite(LED_MAIN, LOW);
+  digitalWrite(LED_LEFT, LOW); 
+  digitalWrite(LED_RIGHT, LOW);
+}
+
+void ledAllOn(){
+  digitalWrite(LED_MAIN, HIGH);
+  digitalWrite(LED_LEFT, HIGH); 
+  digitalWrite(LED_RIGHT, HIGH);
+}
+
+void ledMainOn(){
+  digitalWrite(LED_MAIN, HIGH);
+  digitalWrite(LED_LEFT, LOW); 
+  digitalWrite(LED_RIGHT, LOW);
+}
+
+void ledMainLelftOn(){
+  digitalWrite(LED_MAIN, HIGH);
+  digitalWrite(LED_LEFT, HIGH); 
+  digitalWrite(LED_RIGHT, LOW);
+}
+
+void ledMainRightOn(){
+  digitalWrite(LED_MAIN, HIGH);
+  digitalWrite(LED_LEFT, LOW); 
+  digitalWrite(LED_RIGHT, HIGH);
+}
+
+void ledLeftRightOn(){
+  digitalWrite(LED_MAIN, LOW);
+  digitalWrite(LED_LEFT, HIGH); 
+  digitalWrite(LED_RIGHT, HIGH);
+}
+
+void ledLeftRightFade(){
+  if (ledFadeState == "GROW") {
+    ledBrightness += ledBrightnessSteps;
+    if (ledBrightness>=255-ledBrightnessSteps) {
+      ledFadeState = "SHRINK";
+    }
+  }else if (ledFadeState == "SHRINK") {
+    ledBrightness -= ledBrightnessSteps;
+    if (ledBrightness<=ledBrightnessSteps) {
+      ledFadeState = "GROW";
+    }
+  }
+  digitalWrite(LED_MAIN, HIGH);
+  digitalWrite(LED_LEFT, ledBrightness); 
+  digitalWrite(LED_RIGHT, ledBrightness);
+}
+
+void ledAllFade(){
+  if (ledFadeState == "GROW") {
+    ledBrightness += ledBrightnessSteps;
+    if (ledBrightness>=255-ledBrightnessSteps) {
+      ledFadeState = "SHRINK";
+    }
+  }else if (ledFadeState == "SHRINK") {
+    ledBrightness -= ledBrightnessSteps;
+    if (ledBrightness<=ledBrightnessSteps) {
+      ledFadeState = "GROW";
+    }
+  }
+  digitalWrite(LED_MAIN, HIGH);
+  digitalWrite(LED_LEFT, ledBrightness); 
+  digitalWrite(LED_RIGHT, ledBrightness);
 }
