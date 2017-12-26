@@ -9,7 +9,7 @@
 //  description: At current state the code prints out the variables of the MPU-9150. 
 //               The LEDs are basically implemented.
 //
-//  source: https://github.com/JanPSchneider/navilight
+//  source: https://github.com/jan-patrick/navilight
 //  
 //  devices:
 //  - Arduino Mega
@@ -68,9 +68,12 @@ MPU9150Lib MPU;                                             // the MPU object
 #define  SERIAL_PORT_SPEED  115200
 
 // set the LED-PINs
-const int LED_MAIN =  3;                            // constants won't change
+const int LED_MAIN =  3;                                    // constants won't change
 const int LED_LEFT =  2;
 const int LED_RIGHT =  4;
+
+const int LEDON = 0;                                      // 150 for testing without resistors
+const int LEDOFF = 0;
 
 // status of navilight (0 = navigation off but device is on, 1 = start, 2 = stop, 3 = straight, 4 = left, 5 = right, 6 = false, 7 = warning)
 int status = 0;
@@ -117,6 +120,7 @@ void setup(){
 }
 
 void loop(){
+Serial.print("hi");
 
   currentMillis = millis();                                 // setting current time in milliseconds
 
@@ -132,16 +136,16 @@ void loop(){
   switch (status){
     // navigation off but device is on
     case 0:
-      ledControl(250, 0, 0);
+      ledControl(LEDON, LEDOFF, LEDOFF);
       break;
     // start  
     case 1:
       if (currentMillis - previousMillisStart >= startInterval) {
         previousMillisStart = currentMillis;                // save the last time the LED state was changed
         if(LED_LEFT<=50){
-          ledControl(250, 250, 250);
+          ledControl(LEDON, LEDON, LEDON);
         }else{
-          ledControl(250, 0, 0);
+          ledControl(LEDON, LEDOFF, LEDOFF);
           status = 3;
           Serial.println("I am in status: 3");
           Serial.println("Started navigation, please start moving.");
@@ -157,15 +161,15 @@ void loop(){
       break;
     // straight
     case 3:
-      ledControl(250, 0, 0);
+      ledControl(LEDON, LEDOFF, LEDOFF);
       break;
     // left
     case 4:
-      ledControl(250, 0, 0);
+      ledControl(LEDON, LEDON, LEDOFF);
       break;
     // right
     case 5:
-      ledControl(250, 0, 0);
+      ledControl(LEDON, LEDOFF, LEDON);
       break;
     // false
     case 6:
@@ -182,7 +186,7 @@ void loop(){
       }
       break;          
     default:
-      ledControl(0, 0, 0);                                  // make sure the LEDs are off while device is "off"
+      ledControl(LEDOFF, LEDOFF, LEDOFF);                   // make sure the LEDs are off while device is "off"
       break;    
   }
 
@@ -199,23 +203,26 @@ void loop(){
 
 // function to read out the MPU-9150
 void readoutMPU() {
-  readoutcounter++;
-  String readouttext = "Readouts: ";
-  String readouttextandvariable = readouttext + readoutcounter;
-  Serial.println(readouttextandvariable); 
 //  MPU.printQuaternion(MPU.m_rawQuaternion);               // print the raw quaternion from the dmp
 //  MPU.printVector(MPU.m_rawMag);                          // print the raw mag data
 //  MPU.printVector(MPU.m_rawAccel);                        // print the raw accel data
 //  MPU.printAngles(MPU.m_dmpEulerPose);                    // the Euler angles from the dmp quaternion
 //  MPU.printVector(MPU.m_calAccel);                        // print the calibrated accel data
 //  MPU.printVector(MPU.m_calMag);                          // print the calibrated mag data
-  MPU.printAngles(MPU.m_fusedEulerPose);                    // print the output of the data fusion
-  Serial.println();
-  mpuValues[readoutcounter+4] = MPU.m_fusedEulerPose[1];
-  if(20 <= mpuValues[readoutcounter+3]-mpuValues[readoutcounter+4]){
+//  MPU.printAngles(MPU.m_fusedEulerPose);                    // print the output of the data fusion
+//  Serial.println();
+  mpuValues[readoutcounter] = MPU.m_fusedEulerPose[1];
+  readoutcounter++;
+  for (int i = 0; i < sizeof(mpuValues) - 1; i++){
+  Serial.print(mpuValues[i]);
+  }
+  for (int i = 0; i < sizeof(MPU.m_fusedEulerPose) - 1; i++){
+  Serial.println(MPU.m_fusedEulerPose[i]);
+  }
+  if(0 <= mpuValues[sizeof(mpuValues)-1]-mpuValues[readoutcounter+4]){
     deviation = -1;
     Serial.println("Wrong course, turn left!");
-  }else if(360 >= mpuValues[readoutcounter+3]-mpuValues[readoutcounter+4]){
+  }else if(360 >= mpuValues[sizeof(mpuValues)-1]-mpuValues[sizeof(mpuValues)]){
     deviation = 1;
     Serial.println("Wrong course, turn right!");
   }else{
@@ -233,7 +240,7 @@ void ledControl(int ledMainStatus, int ledLeftStatus, int ledRightStatus){
 void ledLeftRightFade(){
   if (ledFadeState == "GROW") {
     ledBrightness += ledBrightnessSteps;
-    if (ledBrightness>=255-ledBrightnessSteps) {
+    if (ledBrightness>=LEDON-ledBrightnessSteps) {
       ledFadeState = "SHRINK";
     }
   }else if (ledFadeState == "SHRINK") {
@@ -242,7 +249,7 @@ void ledLeftRightFade(){
       ledFadeState = "GROW";
     }
   }
-  digitalWrite(LED_MAIN, 250);
+  digitalWrite(LED_MAIN, LEDON);
   digitalWrite(LED_LEFT, ledBrightness); 
   digitalWrite(LED_RIGHT, ledBrightness);
 }
@@ -250,12 +257,12 @@ void ledLeftRightFade(){
 void ledAllFade(){
   if (ledFadeState == "GROW") {
     ledBrightness += ledBrightnessSteps;
-    if (ledBrightness>=255-ledBrightnessSteps) {
+    if (ledBrightness>=LEDON-ledBrightnessSteps) {
       ledFadeState = "SHRINK";
     }
   }else if (ledFadeState == "SHRINK") {
     ledBrightness -= ledBrightnessSteps;
-    if (ledBrightness<=170) {
+    if (ledBrightness<=LEDON/2) {
       ledFadeState = "GROW";
     }
   }
