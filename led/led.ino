@@ -6,8 +6,7 @@
 //
 //  date: 08.01.2018
 //  
-//  description: At current state the code prints out the variables of the MPU-9150. 
-//               The LEDs are basically implemented.
+//  description: This code shows all states navilight can show.
 //
 //  source: https://github.com/jan-patrick/navilight
 //  
@@ -30,12 +29,12 @@ const int LED_MAIN =  3;                                    // constants won't c
 const int LED_LEFT =  2;
 const int LED_RIGHT =  4;
 
-const int LEDON = 30;                                      // 150 for testing without resistors
+const int LEDON = 20;                                      // 150 for testing without resistors
 const int LEDOFF = 0;
 
-// status of navilight (0 = navigation off but device is on, 1 = start, 2 = stop, 3 = straight, 4 = left, 5 = right, 6 = false, 7 = warning, 8 = all off)
+// status of navilight (0 = navigation off but device is on, 1 = start, 2 = stop, 3 = straight, 4 = left, 5 = right, 6 = false, 7 = warning, 8 = batterie warning, everything else = all off)
 int status = 0;
-int started = false;
+int started = 0;
 
 // time variables
 unsigned long currentMillis = 0; 
@@ -43,20 +42,25 @@ unsigned long previousMillisStart = 0;
 unsigned long previousMillisFadeWarning = 0;
 unsigned long previousMillisFadeStop = 0;
 unsigned long previousMillisFadeFalse = 0;
+unsigned long previousMillisBatterie = 0;
 
 // intervals
-const long startInterval = 200;
-const long fadeWarningInterval = 20;
+const long startInterval = 100;
+const long fadeWarningInterval = 175;
 const long fadeStopInterval = 100;
-const long fadeFalseInterval = 75;
+const long fadeFalseInterval = 200;
+const long fadeBatterieInterval = 200;
 
 // fade variables
 int ledBrightness = 0;
-int ledBrightnessSteps = 5;
+int ledMainBatterieBrightness = LEDON;
+int ledBrightnessSteps = 2;
+int ledMainBatterieBrightnessSteps = ledBrightnessSteps;
 String ledFadeState = "GROW";
+String ledMainBatterieFadeState = "SHRINK";
+int ledMainBatterieFadecounter = 0; 
 
 void setup(){
-
   Serial.begin(SERIAL_PORT_SPEED);
   Serial.println("navilight started");
 
@@ -67,7 +71,7 @@ void setup(){
 }
 
 void loop(){
-// Serial.print("hi");
+//Serial.print("hi");
 
   currentMillis = millis();                                 // setting current time in milliseconds
  
@@ -85,14 +89,10 @@ void loop(){
       break;
     // start  
     case 1:
-      ledControl(LEDON, LEDON, LEDON);
-      //if (currentMillis - previousMillisStart >= startInterval) {
-      //  previousMillisStart = currentMillis;                // save the last time the LED state was changed
-      //  ledControl(LEDON, LEDOFF, LEDOFF);
-      //  status = 3;
-      //  Serial.println("I am in status: 3");
-      //  Serial.println("Started navigation, please start moving."); 
-      //}  
+      if (currentMillis - previousMillisStart >= startInterval) {
+        previousMillisStart = currentMillis;                // save the last time the LED state was changed
+        ledControl(LEDON, LEDON, LEDON);                    
+      } 
       break;
     // stop
     case 2:
@@ -125,9 +125,16 @@ void loop(){
     case 7:
       if(currentMillis - previousMillisFadeWarning >= fadeWarningInterval) {
         previousMillisFadeWarning = currentMillis;   
-        ledLeftRightFade();
+        ledLeftRightBlink();
       }
       break;
+    // low batterie  
+    case 8:
+      if(currentMillis - previousMillisBatterie >= fadeBatterieInterval) {
+        previousMillisBatterie = currentMillis;   
+        ledMainFade();
+      }
+      break;  
     // all off by default           
     default:
       ledControl(LEDOFF, LEDOFF, LEDOFF);                   // make sure the LEDs are off while device is "off"
@@ -144,10 +151,8 @@ void ledControl(int ledMainStatus, int ledLeftStatus, int ledRightStatus){
 
 void ledLeftRightFade(){
   if (ledFadeState == "GROW") {
-    ledBrightness += ledBrightnessSteps;
-    if (ledBrightness>=LEDON-ledBrightnessSteps) {
-      ledFadeState = "SHRINK";
-    }
+    ledBrightness = LEDON;
+    ledFadeState = "SHRINK";
   }else if (ledFadeState == "SHRINK") {
     ledBrightness -= ledBrightnessSteps;
     if (ledBrightness<=ledBrightnessSteps) {
@@ -157,6 +162,40 @@ void ledLeftRightFade(){
   analogWrite(LED_MAIN, LEDON);
   analogWrite(LED_LEFT, ledBrightness); 
   analogWrite(LED_RIGHT, ledBrightness);
+}
+
+void ledLeftRightBlink(){
+  analogWrite(LED_MAIN, LEDON);
+  if (ledFadeState == "GROW") {
+    analogWrite(LED_LEFT, LEDON); 
+    analogWrite(LED_RIGHT, LEDON);
+    ledFadeState = "SHRINK";
+  }else if (ledFadeState == "SHRINK") {
+    analogWrite(LED_LEFT, LEDOFF); 
+    analogWrite(LED_RIGHT, LEDOFF);
+    ledFadeState = "GROW";
+  }
+}
+
+void ledMainFade(){
+  analogWrite(LED_LEFT, LEDOFF); 
+  analogWrite(LED_RIGHT, LEDOFF);
+  if(ledMainBatterieFadecounter >= 3){
+    analogWrite(LED_MAIN, LEDOFF);
+    ledMainBatterieFadecounter = 0;
+    status = 42;
+  }else if (ledMainBatterieFadeState == "GROW") {
+    ledMainBatterieBrightness = LEDON;
+    ledMainBatterieFadeState = "SHRINK";
+    analogWrite(LED_MAIN, ledMainBatterieBrightness);
+  }else if (ledMainBatterieFadeState == "SHRINK") {
+    ledMainBatterieBrightness -= ledMainBatterieBrightnessSteps;
+    analogWrite(LED_MAIN, ledMainBatterieBrightness);
+    if (ledMainBatterieBrightness<=0) {
+      ledMainBatterieFadeState = "GROW";
+      ledMainBatterieFadecounter++;
+    }
+  }
 }
 
 void ledAllFade(){
