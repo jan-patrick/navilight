@@ -43,19 +43,27 @@ unsigned long previousMillisFadeWarning = 0;
 unsigned long previousMillisFadeStop = 0;
 unsigned long previousMillisFadeFalse = 0;
 unsigned long previousMillisBatterie = 0;
+unsigned long previousMillisFadeLeft = 0;
+unsigned long previousMillisFadeRight = 0;
 
 // intervals
 const long startInterval = 100;
 const long fadeWarningInterval = 175;
-const long fadeStopInterval = 100;
+const long fadeStopInterval = 700;
 const long fadeFalseInterval = 200;
 const long fadeBatterieInterval = 200;
+const long fadeLeftInterval = 500;
+const long fadeRightInterval = fadeLeftInterval;
 
 // fade variables
 int ledBrightness = 0;
+int ledLeftBrightness = ledBrightness;
+int ledRightBrightness = ledBrightness;
 int ledMainBatterieBrightness = LEDON;
 int ledBrightnessSteps = 2;
 int ledMainBatterieBrightnessSteps = ledBrightnessSteps;
+int ledLeftBrightnessSteps = 1;
+int ledRightBrightnessSteps = ledLeftBrightnessSteps;
 String ledFadeState = "GROW";
 String ledMainBatterieFadeState = "SHRINK";
 int ledMainBatterieFadecounter = 0; 
@@ -99,7 +107,7 @@ void loop(){
       ledBrightnessSteps = 2;
       if(currentMillis - previousMillisFadeStop >= fadeStopInterval) {
         previousMillisFadeStop = currentMillis;   
-        ledAllFade();
+        ledLeftRightBlinkAsyn();
       }
       break;
     // straight
@@ -108,11 +116,17 @@ void loop(){
       break;
     // left
     case 4:
-      ledControl(LEDON, LEDON, LEDOFF);
+      if(currentMillis - previousMillisFadeLeft >= fadeLeftInterval) {
+        previousMillisFadeLeft = currentMillis;
+        ledLeftFade();
+      }  
       break;
     // right
     case 5:
-      ledControl(LEDON, LEDOFF, LEDON);
+      if(currentMillis - previousMillisFadeRight >= fadeRightInterval) {
+        previousMillisFadeRight = currentMillis;
+        ledRightFade();
+      }
       break;
     // false
     case 6:
@@ -134,8 +148,16 @@ void loop(){
         previousMillisBatterie = currentMillis;   
         ledMainFade();
       }
+      break;
+    // letting left glow  
+    case 44:
+      ledControl(LEDON, LEDON, LEDOFF);
       break;  
-    // all off by default           
+    // letting right glow  
+    case 55:
+      ledControl(LEDON, LEDOFF, LEDON);
+      break;  
+    // all off by default and like status 42         
     default:
       ledControl(LEDOFF, LEDOFF, LEDOFF);                   // make sure the LEDs are off while device is "off"
       break;    
@@ -177,6 +199,19 @@ void ledLeftRightBlink(){
   }
 }
 
+void ledLeftRightBlinkAsyn(){
+  analogWrite(LED_MAIN, LEDON);
+  if (ledFadeState == "GROW") {
+    analogWrite(LED_LEFT, LEDON); 
+    analogWrite(LED_RIGHT, LEDOFF);
+    ledFadeState = "SHRINK";
+  }else if (ledFadeState == "SHRINK") {
+    analogWrite(LED_LEFT, LEDOFF); 
+    analogWrite(LED_RIGHT, LEDON);
+    ledFadeState = "GROW";
+  }
+}
+
 void ledMainFade(){
   analogWrite(LED_LEFT, LEDOFF); 
   analogWrite(LED_RIGHT, LEDOFF);
@@ -195,6 +230,28 @@ void ledMainFade(){
       ledMainBatterieFadeState = "GROW";
       ledMainBatterieFadecounter++;
     }
+  }
+}
+
+void ledLeftFade(){
+  analogWrite(LED_RIGHT, LEDOFF);
+  analogWrite(LED_MAIN, LEDON);
+  ledLeftBrightness += ledLeftBrightnessSteps;
+  analogWrite(LED_LEFT, ledLeftBrightness);
+  if (ledLeftBrightness>=LEDON-ledLeftBrightnessSteps) {
+    ledLeftBrightness = 0;
+    status = 44;
+  }
+}
+
+void ledRightFade(){
+  analogWrite(LED_LEFT, LEDOFF);
+  analogWrite(LED_MAIN, LEDON);
+  ledRightBrightness += ledRightBrightnessSteps;
+  analogWrite(LED_RIGHT, ledRightBrightness);
+  if (ledRightBrightness>=LEDON-ledRightBrightnessSteps) {
+    ledRightBrightness = 0;
+    status = 55;
   }
 }
 
