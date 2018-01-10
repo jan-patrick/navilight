@@ -47,7 +47,7 @@ unsigned long previousMillisFadeLeft = 0;
 unsigned long previousMillisFadeRight = 0;
 
 // intervals
-const long startInterval = 100;
+const long startInterval = 2000;
 const long fadeWarningInterval = 175;
 const long fadeStopInterval = 700;
 const long fadeFalseInterval = 200;
@@ -99,8 +99,14 @@ void loop(){
     case 1:
       if (currentMillis - previousMillisStart >= startInterval) {
         previousMillisStart = currentMillis;                // save the last time the LED state was changed
-        ledControl(LEDON, LEDON, LEDON);                    
-      } 
+        started++;
+        if(started>=2){
+          started = 0;
+          status = 3;
+        }else{
+          ledControl(LEDON, LEDON, LEDON);
+        }                   
+      }
       break;
     // stop
     case 2:
