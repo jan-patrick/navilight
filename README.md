@@ -19,7 +19,7 @@ Project of the lecture "Mobile Medien" with Steffen Kolb at HfG Schwäbisch Gmü
 <br><br>
 <a href="https://iot.hfg-gmuend.de/author/tobias_haag">Tobias Haag</a>, 
 <a href="https://iot.hfg-gmuend.de/author/jacqueline_lechner">Jacqueline Lechner</a>, 
-<a href="http://jan-patrick.de">Jan Schneider</a>
+<a href="https://www.jan-patrick.de">Jan Schneider</a>
 <br>
 <br>
 Library-code: <a href="http://www.mellottsvrpage.com/wp-content/uploads/2014/05/MPU9150Lib-master.zip">MPU-9150Lib</a></p>
